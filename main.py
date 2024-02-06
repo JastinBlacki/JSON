@@ -1,88 +1,120 @@
-import json
+import requests
+import datetime
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
+
+url = 'https://dev.rightech.io/api/v1/objects'
+headers = {
+    'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2NTk2Nzg4Mzk2YmE1ZjY2ZTBhNjZlNTkiLCJzdWIiOiI2NTk1YTE1ZjczNWY1ZDcxZTIwMWNhZmYiLCJncnAiOiI2NTk1YTE1ZjczNWY1ZDcxZTIwMWNhZmUiLCJvcmciOiI2NTk1YTE1ZjczNWY1ZDcxZTIwMWNhZmUiLCJsaWMiOiI1ZDNiNWZmMDBhMGE3ZjMwYjY5NWFmZTMiLCJ1c2ciOiJhcGkiLCJmdWxsIjpmYWxzZSwicmlnaHRzIjoxLjUsImlhdCI6MTcwNDM2MDA2NywiZXhwIjoxNzA2OTAwNDAwfQ.RHNCW9zKCD_YoY6YKZd5QRywq4yZs8vJtkT2RspjHkM',
+    'Content-Type': 'application/json'
+}
 
 
-def read_inf(file_name):
-    with open(file_name, 'r', encoding="utf-8") as file:
-        return json.load(file)
+def my_utc_from_timestamp(ts):
+    return datetime.datetime.utcfromtimestamp(ts // 1000)
 
 
-cars = read_inf("Cars.json")
-companies = read_inf("Companies.json")
-drivers = read_inf("Drivers.json")
-sensors = read_inf("Sensors.json")
-users = read_inf("Users.json")
-wheels = read_inf("Wheels.json")
+def timestamp_from_utc(date):
+    return datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S').timestamp()
 
 
-def get_id_company(company_name):
-    return [i.get('ID_company') for i in companies if i.get("Name") == company_name]
+def get_state():
+    try:
+        response = requests.get(url, headers=headers)
+        # Проверяем успешность запроса
+        if response.status_code == 200:
+            data = response.json()  # Если ответ в формате JSON
+            # print(data)
+            # print(data[0]["state"]["temperature"])
+            return (data[0]["state"]["temperature"], data[0]["state"]["humidity"])
+        else:
+            print(f'Ошибка запроса: {response.status_code}')
+            print(response.text)
+
+    except Exception as e:
+        print(f'Произошла ошибка: {e}')
 
 
-def get_id_driver(driver_name):
-    return [i.get('ID_user') for i in users if i.get('Full name') == driver_name]
+def get_time_line_data():
+    global url
+
+    data = 0
+    pressure = {}
+    temperature = {}
+
+    try:
+        response = requests.get(url, headers=headers)
+
+        # Проверяем успешность запроса
+        if response.status_code == 200:
+            data = response.json()  # Если ответ в формате JSON
+        else:
+            print(f'Ошибка запроса: {response.status_code}')
+            print(response.text)
+
+    except Exception as e:
+        print(f'Произошла ошибка: {e}')
+
+    url = f'https://dev.rightech.io/api/v1/objects/{data[0]["_id"]}/packets?withChildGroups=true&ofType=telemetry&snaps=true&nolimit=true&streamed=true&from=1704339181541&to=1704425581541&db=pgts'
+
+    try:
+        response = requests.get(url, headers=headers)
+
+        # Проверяем успешность запроса
+        if response.status_code == 200:
+            data = response.json()  # Если ответ в формате JSON
+        else:
+            print(f'Ошибка запроса: {response.status_code}')
+            print(response.text)
+
+    except Exception as e:
+        print(f'Произошла ошибка: {e}')
+
+    # print(my_utc_from_timestamp(data[0]["time"]))
+    # print(data)
+    for i in data:
+        if 'humidity' in i:
+            pressure[str(my_utc_from_timestamp(i["time"]))] = i['humidity']
+        elif 'temperature' in i:
+            temperature[str(my_utc_from_timestamp(i["time"]))] = i['temperature']
+
+    temperature = dict(sorted(temperature.items()))
+    pressure = dict(sorted(pressure.items()))
+
+    return temperature, pressure
 
 
-def type_company(id_company, type_):
-    drivers_id = [i.get("ID_user") for i in users if
-                  i.get("Type") == type_ and int(i.get("Company")) in id_company]
-    return drivers_id
+def get_graph(chat_id):
+    data = get_time_line_data()
+
+    dates_temp = [datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S") for date in data[0].keys()]
+    dates_press = [datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S") for date in data[1].keys()]
+
+    numbers_temp = [int(number) for number in data[0].values()]
+    numbers_press = [int(number) for number in data[1].values()]
+
+    # Задаем размер графика
+    plt.figure(figsize=(15, 6))
+
+    # Построение графиков
+    plt.plot(dates_temp, numbers_temp, label='Температура', color="green")
+    plt.plot(dates_press, numbers_press, label='Давление', color="blue")
+
+    # Добавление легенды
+    plt.legend()
+
+    plt.xlabel('Дата и время')
+    plt.ylabel('Значение')
+    plt.title('Давление и Температура')
+
+    # plt.show()
+
+    # Возвращаем график в виде изображения
+    img_buf = BytesIO()
+    plt.savefig(f"graph_{chat_id}", format='png')
+    img_buf.seek(0)
 
 
-def get_inf_users():
-    print("Название компании?")
-    company_name = input()
-    print("Водитель/Владелец?")
-    type_ = input()
-    id_users = type_company(get_id_company(company_name), type_)
-    return ([(i.get("Full name"), i.get("Birthday")) for i in users
-             if i.get('Type') == type_ and i.get('ID_user') in id_users])
-
-
-def get_inf_drivers():
-    print("Название компании")
-    company_name = input()
-    id_users = type_company(get_id_company(company_name), "Водитель")
-    list_inf_user = [
-        [i.get("ID_driver"), i.get("Breakdown_frequency"), i.get("Type"), i.get("Rating"), i.get("Describe_driver")]
-        for i in drivers if i.get('ID_driver') in id_users]
-    for j in users:
-        for l in list_inf_user:
-            if l[0] == j.get("ID_user"):
-                l.append(j.get("Full name"))
-                l.append(j.get("Birthday"))
-                l.pop(0)
-    return list_inf_user
-
-
-def get_car_driver():
-    print("Имя водителя")
-    name_driver = input()
-    id_drivers = get_id_driver(name_driver)
-    cars_id = [i.get("Registration_number") for i in cars if i.get("Driver") in id_drivers]
-    return cars_id
-
-
-def all_wheel_car():
-    print("Регистрационный номер машины")
-    reg_car = int(input())
-    car_id = [i.get("ID_wheel") for i in wheels if i.get("Car_number") == reg_car]
-    return car_id
-
-
-def car_wheels_sensors(reg_car):
-    sensors_id = [int(i.get("Sensors")) for i in wheels if i.get("Car_number") == reg_car]
-    sensors_inf = [(i.get("ID_sensors"), i.get("Type"), i.get("Readings"))
-                   for i in sensors if i.get("ID_sensors") in sensors_id]
-    return sensors_inf
-
-
-def all_sensors_car():
-    print("Регистрационный номер машины")
-    reg_car = int(input())
-    car_sensors = [int(i.get("Sensors")) for i in cars if i.get("Registration_number") == reg_car]
-    car_sensors_inf = [(i.get("ID_sensors"), i.get("Type"), i.get("Readings"))
-                       for i in sensors if i.get("ID_sensors") in car_sensors]
-    return car_sensors_inf, car_wheels_sensors(reg_car)
-
-
-print(all_sensors_car())
+    # Очищаем текущий график
+    plt.clf()

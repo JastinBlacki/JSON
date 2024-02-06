@@ -102,11 +102,7 @@ def all_sensors_car():
 
 
 def get_defects_driver_car(value, type_):
-    for i in defects:
-        print(i.get(type_), value)
-        if str(i.get(type_)) == str(value):
-            print((i.get("Type"), i.get("describe")))
-    return [(i.get("Type"), i.get("describe")) for i in defects if str(i.get(type_)) == str(id_)]
+    return [(i.get("Type"), i.get("describe")) for i in defects if str(i.get(type_)) == str(value)]
 
 
 def get_id_driver_phone(login):

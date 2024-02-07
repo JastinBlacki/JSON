@@ -6,13 +6,13 @@ def read_inf(file_name):
         return json.load(file)
 
 
-cars = read_inf("Cars.json")
-companies = read_inf("Companies.json")
-drivers = read_inf("Drivers.json")
-sensors = read_inf("Sensors.json")
-users = read_inf("Users.json")
-defects = read_inf("Defects.json")
-wheels = read_inf("Wheels.json")
+cars = read_inf("data/Cars.json")
+companies = read_inf("data/Companies.json")
+drivers = read_inf("data/Drivers.json")
+sensors = read_inf("data/Sensors.json")
+users = read_inf("data/Users.json")
+defects = read_inf("data/Defects.json")
+wheels = read_inf("data/Wheels.json")
 
 
 def get_id_company(company_name):

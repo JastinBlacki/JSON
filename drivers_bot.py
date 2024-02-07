@@ -23,6 +23,7 @@ def is_registered(message):
         id_driver = get_id_driver_phone(message.text)[0]
         dict_def.update({"driver_id": id_driver})
         dict_def.update({"car_id": get_car_driver(id_driver)[0]})
+        dict_def.update({"ID_defect": get_id_df()})
         bot.register_next_step_handler(message, pass_login_drivers)
     else:
         bot.send_message(chat_id, "Вашего номера телефона не найдено в базе данных.")
@@ -59,37 +60,36 @@ def callback_message(callback):
     call_funk = callback.data
     message = callback.message
     deleter(message)
-    match call_funk:
-        case 'mechanica':
-            mechanica(message)
-        case 'electric':
-            electric(message)
-        case 'comm_def':
-            func_type2(message, call_funk)
-        case 'reg':
-            start_message(message)
+    if call_funk == 'mechanica':
+        mechanica(message)
+    elif call_funk == 'electric':
+        electric(message)
+    elif call_funk[:8] == 'comm_def':
+        func_type2(message, call_funk[8:])
+    elif 'reg':
+        start_message(message)
 
 
 @bot.message_handler(content_types=['text'])
 def mechanica(message):
     dict_def.update({"Type1": "Механическая"})
     markup2 = types.InlineKeyboardMarkup()
-    markup2.add(types.InlineKeyboardButton('Система охлаждения', callback_data='comm_def'))
-    markup2.add(types.InlineKeyboardButton('Водяной насос', callback_data='comm_def'))
-    markup2.add(types.InlineKeyboardButton('Шины', callback_data='comm_def'))
-    markup2.add(types.InlineKeyboardButton('Привод ГРМ', callback_data='comm_def'))
-    markup2.add(types.InlineKeyboardButton('Другое', callback_data='comm_def'))
+    markup2.add(types.InlineKeyboardButton('Система охлаждения', callback_data='comm_def' + "Система охлаждения"))
+    markup2.add(types.InlineKeyboardButton('Водяной насос', callback_data='comm_def' + 'Водяной насос'))
+    markup2.add(types.InlineKeyboardButton('Шины', callback_data='comm_def' + 'Шины'))
+    markup2.add(types.InlineKeyboardButton('Привод ГРМ', callback_data='comm_def' + 'Привод ГРМ'))
+    markup2.add(types.InlineKeyboardButton('Другое', callback_data='comm_def' + 'Другое'))
     bot.send_message(message.chat.id, 'Выберите тип поломки', reply_markup=markup2, parse_mode='html')
 
 
 def electric(message):
     dict_def.update({"Type2": "Электрическая"})
     markup3 = types.InlineKeyboardMarkup()
-    markup3.add(types.InlineKeyboardButton('Антиблокировочная система (ABS)', callback_data='comm_def'))
-    markup3.add(types.InlineKeyboardButton('Системы комфорта', callback_data='comm_def'))
-    markup3.add(types.InlineKeyboardButton('Электронная система торможения (EBS)', callback_data='comm_def'))
-    markup3.add(types.InlineKeyboardButton('Адаптивный круиз контроль (ACC)', callback_data='comm_def'))
-    markup3.add(types.InlineKeyboardButton('Другое', callback_data='comm_def'))
+    markup3.add(types.InlineKeyboardButton('Антиблокировочная система (ABS)', callback_data='comm_def' + 'Антиблокировочная система (ABS)'))
+    markup3.add(types.InlineKeyboardButton('Системы комфорта', callback_data='comm_def' + 'Системы комфорта'))
+    markup3.add(types.InlineKeyboardButton('Электронная система торможения (EBS)', callback_data='comm_def' + 'Электронная система торможения (EBS)'))
+    markup3.add(types.InlineKeyboardButton('Адаптивный круиз контроль (ACC)', callback_data='comm_def' + 'Адаптивный круиз контроль (ACC)'))
+    markup3.add(types.InlineKeyboardButton('Другое', callback_data='comm_def' + 'Другое'))
     bot.send_message(message.chat.id, 'Выберите тип поломки', reply_markup=markup3, parse_mode='html')
 
 
@@ -101,9 +101,10 @@ def func_type2(message, call_funk):
 
 
 def func_describe(message):
+    chat_id = message.chat.id
     dict_def.update({"describe": message.text})
-    print(dict_def)
     add_row_json(dict_def)
+    bot.send_message(chat_id, "Поломка успешно добавлена")
 
 
 @bot.message_handler(func=lambda message: message)

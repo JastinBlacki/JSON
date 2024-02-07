@@ -123,6 +123,11 @@ def deleter_message(chat_id, message, count_del=1):
             continue
 
 
+def get_id_df():
+    b = json.load(open('Defects.json', encoding='utf-8'))
+    return b[len(b) - 1]['ID_defect'] + 1
+
+
 def add_row_json(dict_):
     b = json.load(open('Defects.json', encoding='utf-8'))
     b.append(dict_)

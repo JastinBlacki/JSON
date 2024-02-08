@@ -21,8 +21,8 @@ def is_registered(message):
     if str(message.text) in registered_drivers:
         bot.send_message(chat_id, "Введите пароль")
         id_driver = get_id_driver_phone(message.text)[0]
-        dict_def.update({"driver_id": id_driver})
-        dict_def.update({"car_id": get_car_driver(id_driver)[0]})
+        dict_def.update({"driver_id": id_driver}) # После того как пользователь зарегался создется словарь со всей его инфой
+        dict_def.update({"car_id": get_car(id_driver, "Driver")[0]})
         dict_def.update({"ID_defect": get_id_df()})
         bot.register_next_step_handler(message, pass_login_drivers)
     else:
@@ -61,11 +61,11 @@ def callback_message(callback):
     message = callback.message
     deleter(message)
     if call_funk == 'mechanica':
-        mechanica(message)
+        mechanica(message) # если поломка механическая
     elif call_funk == 'electric':
-        electric(message)
+        electric(message) # если поломка электрическая
     elif call_funk[:8] == 'comm_def':
-        func_type2(message, call_funk[8:])
+        func_type2(message, call_funk[8:]) # подтипы поломок (система охлаждения и т.п.)
     elif 'reg':
         start_message(message)
 
@@ -103,7 +103,7 @@ def func_type2(message, call_funk):
 def func_describe(message):
     chat_id = message.chat.id
     dict_def.update({"describe": message.text})
-    add_row_json(dict_def)
+    add_row_json(dict_def) # записываем словарь в файл со всеми дефектами
     bot.send_message(chat_id, "Поломка успешно добавлена")
 
 

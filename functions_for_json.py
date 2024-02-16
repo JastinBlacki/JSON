@@ -103,20 +103,6 @@ def get_id_driver_phone(login):
     return [i.get("ID_user") for i in users if str(i.get("Login")) == str(login)]
 
 
-def deleter_message(chat_id, message, count_del=1):
-    message_id = message.id
-    if count_del < 0:
-        del_list = range(0, count_del, -1)
-    else:
-        del_list = range(count_del)
-
-    for i in del_list:
-        try:
-            bot.delete_message(chat_id, message_id - i)
-        except Exception as error:
-            continue
-
-
 # получить id последнего добавленного дефекта
 def get_id_df():
     b = json.load(open('data/Defects.json', encoding='utf-8'))

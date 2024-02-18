@@ -23,14 +23,10 @@ def is_registered(message):
         id_driver = get_id_driver_phone(message.text)[0]
         dict_def.update({"driver_id": id_driver}) # После того как пользователь зарегался создется словарь со всей его инфой
         dict_def.update({"car_id": get_car(id_driver, "Driver")[0]})
-        try:
-            dict_def.update({"ID_defect": get_id_df()})
-        except Exception:
-            dict_def.update({"ID_defect": None})
+        dict_def.update({"ID_defect": get_id_df()})
         bot.register_next_step_handler(message, pass_login_drivers)
     else:
         bot.send_message(chat_id, "Вашего номера телефона не найдено в базе данных.")
-        start_message(message)
 
 
 @bot.message_handler(commands=['help'])
@@ -63,7 +59,7 @@ def callback_message(callback):
     chat_id = callback.message.chat.id
     call_funk = callback.data
     message = callback.message
-    # deleter(message)
+    deleter(message)
     if call_funk == 'mechanica':
         mechanica(message) # если поломка механическая
     elif call_funk == 'electric':
@@ -74,6 +70,7 @@ def callback_message(callback):
         start_message(message)
 
 
+@bot.message_handler(content_types=['text'])
 def mechanica(message):
     dict_def.update({"Type1": "Механическая"})
     markup2 = types.InlineKeyboardMarkup()
@@ -108,27 +105,12 @@ def func_describe(message):
     dict_def.update({"describe": message.text})
     add_row_json(dict_def) # записываем словарь в файл со всеми дефектами
     bot.send_message(chat_id, "Поломка успешно добавлена")
-    help_message(message)
 
 
-# @bot.message_handler(func=lambda message: message)
+@bot.message_handler(func=lambda message: message)
 def deleter(message):
     chat_id = message.chat.id
     deleter_message(chat_id, message, 10)
-
-
-def deleter_message(chat_id, message, count_del=1):
-    message_id = message.id
-    if count_del < 0:
-        del_list = range(0, count_del, -1)
-    else:
-        del_list = range(count_del)
-
-    for i in del_list:
-        try:
-            bot.delete_message(chat_id, message_id - i)
-        except Exception as error:
-            continue
 
 
 bot.infinity_polling()
